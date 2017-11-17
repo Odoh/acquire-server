@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Acquire HTTP API</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+    <script>$(function(){$("#menu").load("/html/menu.html");});</script>
+    <link rel="stylesheet" type='text/css' href="/css/menu.css">
+</head>
+<body style="padding-top: 0px">
+<div id="menu"></div>
+<xmp theme="readable" style="display:none;">
+HTTP API
+--------
+### GET
+| Route                  | Description                                               |
+|------------------------|-----------------------------------------------------------|
+| "/"                    | root page.                                                |
+| "/game"                | view active acquire games.                                |
+| "/game/:id"            | view the state of the acquire game with id.               |
+| "/game/:id/history"    | view the history of states of the acquire game with id.   |
+
+
+### POST
+| Route                  | Description                                               |
+|------------------------|-----------------------------------------------------------|
+| "/game/create"         | create a new acquire game.                                |
+| "/game/:id/request"    | send an acquire request to the acquire game with id.      |
+
+#### Acquire State JSON
+The state JSON contains all the information about an Acquire game at a certain point in time.
+
+* It contains 5 fields:
+  - turn: the turn in the game this state describes.
+  - [request](requests): the previous request which led to this state; the request made on (turn - 1).
+  - [response](requests): the response to the previous request.
+  - [sm](states): the state of the game on this turn.
+  - [objs](objects): the state of the objects in the game on this turn.
+
+#### GET Game State (/game/:id)
+Retrieves the state of the acquire game with id as a JSON.
+
+* Query Params
+  - turn: the turn to request state for.
+
+Examples:
+
+    Return the state of the acquire game (id = test_game) for the current turn (turn = 214).
+
+    GET /game/test_game
+    {
+      "turn": 214,
+      "request": { REQUEST_OBJECT_TURN_214 },
+      "response": { RESPONSE_OBJECT_TURN_214 },
+      "sm": { STATE_OBJECT_TURN_214 },
+      "objs" { OBJECTS_OBJECT_214 }
+    }
+
+    Return the state of the acquire game (id = test_game) for turn 100.
+
+    GET /game/test_game?turn=100
+    {
+      "turn": 100,
+      "request": { REQUEST_OBJECT_TURN_100 },
+      "response": { RESPONSE_OBJECT_TURN_100 },
+      "sm": { STATE_OBJECT_TURN_100 },
+      "objs" { OBJECTS_OBJECT_TURN_100 }
+    }
+
+#### GET Game State History (/game/:id/history)
+Retrieves the state history of the acquire game with id as a JSON
+
+* Query Params
+  - startTurn: the start of the turn range to request state history for.
+  - endTurn: the end of the turn range to request state history for.
+
+Examples:
+
+    Return the state history of the acquire game (id = test_game) for the entire game.
+
+    GET /game/test_game/history
+    [
+      {
+        "turn": 0,
+        "request": { REQUEST_OBJECT_TURN_0 },
+        "response": { RESPONSE_OBJECT_TURN_0 },
+        "sm": { STATE_OBJECT_TURN_0 },
+        "objs" { OBJECTS_OBJECT_0 }
+      },
+      ...
+      {
+        "turn": 214,
+        "request": { REQUEST_OBJECT_TURN_214 },
+        "response": { RESPONSE_OBJECT_TURN_214 },
+        "sm": { STATE_OBJECT_TURN_214 },
+        "objs" { OBJECTS_OBJECT_214 }
+      }
+    ]
+
+    Return the state history of the acquire game (id = test_game) from turn 100 to the rest of the game.
+
+    GET /game/test_game/history?startTurn=100
+    [
+      {
+        "turn": 100,
+        "request": { REQUEST_OBJECT_TURN_100 },
+        "response": { RESPONSE_OBJECT_TURN_100 },
+        "sm": { STATE_OBJECT_TURN_100 },
+        "objs" { OBJECTS_OBJECT_100 }
+      },
+      ...
+      {
+        "turn": 214,
+        "request": { REQUEST_OBJECT_TURN_214 },
+        "response": { RESPONSE_OBJECT_TURN_214 },
+        "sm": { STATE_OBJECT_TURN_214 },
+        "objs" { OBJECTS_OBJECT_214 }
+      }
+    ]
+
+    Return the state history of the acquire game (id = test_game) from the start (turn = 0) until turn 100.
+
+    GET /game/test_game/history?endTurn=100
+    [
+      {
+        "turn": 0,
+        "request": { REQUEST_OBJECT_TURN_0 },
+        "response": { RESPONSE_OBJECT_TURN_0 },
+        "sm": { STATE_OBJECT_TURN_0 },
+        "objs" { OBJECTS_OBJECT_0 }
+      },
+      ...
+      {
+        "turn": 100,
+        "request": { REQUEST_OBJECT_TURN_100 },
+        "response": { RESPONSE_OBJECT_TURN_100 },
+        "sm": { STATE_OBJECT_TURN_100 },
+        "objs" { OBJECTS_OBJECT_100 }
+      }
+    ]
+
+    Return the state history of the acquire game (id = test_game) from turn 50 to turn 100.
+
+    GET /game/test_game/history?startTurn=50&endTurn=100
+    [
+      {
+        "turn": 50,
+        "request": { REQUEST_OBJECT_TURN_50 },
+        "response": { RESPONSE_OBJECT_TURN_50 },
+        "sm": { STATE_OBJECT_TURN_50 },
+        "objs" { OBJECTS_OBJECT_50 }
+      },
+      ...
+      {
+        "turn": 100,
+        "request": { REQUEST_OBJECT_TURN_100 },
+        "response": { RESPONSE_OBJECT_TURN_100 },
+        "sm": { STATE_OBJECT_TURN_100 },
+        "objs" { OBJECTS_OBJECT_100 }
+      }
+    ]
+
+#### POST Game Create (/game/create)
+Create a new acquire game.
+
+* Post Data
+  - players: list of player ids delimited by spaces.
+  - ai: list of player ids, to be played by ai, delimited by spaces.
+
+Examples:
+
+    Create an acquire game with players odo, sal, and joree.
+
+    POST /game/create
+    DATA players="odo joree sal"
+
+    Create an acquire game with players odo and sal with an ai joree
+
+    POST /game/create
+    DATA players="odo sal"
+         ai="joree"
+
+#### POST Game Request (/game/:id/request)
+Submit an acquire request as a JSON to an acquire game with id.
+
+* Post Data
+  - request JSON
+
+Example:
+
+    Submit a draw tile request for player Odo to the acquire game (id = test_game).
+
+    POST /game/test_game/request
+    DATA {"type": "draw_tile","player": "odo"}
+</xmp>
+<script src="http://strapdownjs.com/v/0.2/strapdown.js"></script>
+<script>
+    // hide the bootstrap create navbar which is created with a <title>
+    $('.navbar').hide();
+  </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Acquire</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+    <script>$(function(){$("#menu").load("/html/menu.html");});</script>
+    <link rel="stylesheet" type='text/css' href="/css/menu.css">
+    <link rel="stylesheet" href="/css/create.css">
+  </head>
+  <body>
+    <div id="menu"></div>
+    <h1 align="center">Create Acquire Game</h1>
+    <form id="create_game" action="http://{{rooturl}}/game/create" method="post">
+      <fieldset>
+        <ol>
+          <li>
+            <label for="players">Players</label>
+            <input id="players" name="players" type="text" placeholder="odo joree sal" autofocus>
+          </li>
+          <li>
+            <label for="ai">Ai</label>
+            <input id="ai" name="ai" type="text" placeholder="">
+          </li>
+        </ol>
+      </fieldset>
+      <fieldset>
+        <button type="submit">Create Game</button>
+      </fieldset>
+    </form>
+    <br/>
+    <p>List each human and/or ai player names, delimited by spaces. Names may be at most 10 characters long.</p>
+  </body>
+</html>

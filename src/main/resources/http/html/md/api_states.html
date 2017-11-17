@@ -1,0 +1,372 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Acquire States API</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+    <script>$(function(){$("#menu").load("/html/menu.html");});</script>
+    <link rel="stylesheet" type='text/css' href="/css/menu.css">
+</head>
+<body style="padding-top: 0px">
+<div id="menu"></div>
+<xmp theme="readable" style="display:none;">
+### States
+An Acquire game consists of 14 different states:
+
+* DrawTurnTile
+  - each player draws a tile which will determine the player turn order.
+* PlaceTurnTile
+  - each player places the turn tile they drew and the player turn order is determined.
+* DrawInitialTiles
+  - each player draws their initial tiles, forming their hand.
+* PlaceTile
+  - the current player places a tile onto the board, starting their turn.
+* StartHotel
+  - the current player chooses a hotel to start, stemming from their placed tile.
+* FoundersStock
+  - the current player receives a founder's stock for starting a hotel.
+* BuyStock
+  - the current player may buy stock.
+* DrawTile
+  - the current player draws a tile into their hand.
+* ChooseSurvivingHotel
+  - the current player chooses a hotel to survive the merger.
+* ChooseDefunctHotel
+  - the current player chooses the next hotel to defunct.
+* PayBonuses
+  - bonuses are paid to the majority and minority share holders of the defunct hotel.
+* HandleDefunctHotelStocks
+  - players with stock in the defunct hotel either trade, sell, or keep them.
+* EndGamePayout
+  - the payout of all assets after the game has been declared over.
+* GameOver
+  - the final state of the game.
+
+#### DrawTurnTile State
+In this state, each player draws a tile from the draw pile.
+
+* Acquire Requests
+  - DrawTile
+
+Examples:
+
+    The DrawTurnTile state with no players having drawn their tile.
+
+    {
+      "state": "draw_turn_tile",
+      "players_drawn": []
+    }
+
+    The DrawTurnTile state with players Odo and Sal having drawn their tile.
+
+    {
+      "state": "draw_turn_tile",
+      "players_drawn": [
+        "odo",
+        "sal"
+      ]
+    }
+
+#### PlaceTurnTile State
+In this state, each player places their drawn tile onto the board. Once all players have placed their tile, the turn order for the game is set.
+
+* Acquire Requests
+  - PlaceTile
+
+Examples:
+
+    The PlaceTurnTile state with no players having placed their tile.
+
+    {
+      "state": "place_turn_tile",
+      "players_placed": []
+    }
+
+    The PlaceTurnTile state with players Odo and Sal having placed their tile 10-D and 6-E, respectively.
+
+    {
+      "state": "draw_turn_tile",
+      "players_drawn": [
+        {
+          "player": "odo",
+          "tile": "10-D"
+        },
+        {
+          "player": "sal",
+          "tile": "6-E"
+        }
+      ]
+    }
+  
+#### DrawInitialTiles State
+In this state, each player draws their six initial tiles which will make up their hand.
+
+* Acquire Requests
+  - DrawTile
+
+Examples:
+
+    The DrawInitialTiles state with no players having drawn their tiles.
+
+    {
+      "state": "draw_initial_tiles",
+      "players_drawn": []
+    }
+
+    The DrawInitialTiles state with players Odo and Sal having drawn their tiles.
+
+    {
+      "state": "draw_initial_tiles",
+      "players_drawn": [
+        "odo",
+        "sal"
+      ]
+    }
+
+#### PlaceTile State
+In this state, the current player may either place a tile onto the board or end the game.
+
+* Acquire Requests
+  - PlaceTile
+  - EndGame
+
+Example:
+
+    The PlaceTile state with the current player being Odo.
+
+    {
+      "state": "place_tile",
+      "current_player": "odo"
+    }
+
+#### StartHotel State
+In this state, the current player chooses a hotel to start which will be made up of the listed tiles.
+
+* Acquire Requests
+  - ChooseHotel
+
+Example:
+
+    The StartHotel state with the current player being Odo.
+    The started hotel will be made up of tiles 10-D, 9-C, and 10-C.
+
+    {
+      "state": "start_hotel",
+      "current_player": "odo",
+      "tiles": [
+        "10-D",
+        "9-C",
+        "10-C"
+      ]
+    }
+
+#### FoundersStock State
+In this state, the current placer gains a founding stock of the hotel they started.
+
+* Acquire Requests
+  - AcceptStock
+
+Example:
+
+    The FoundersStock state with the current player being Odo.
+    Odo receives a stock of worldwide for founding it.
+
+    {
+      "state": "founders_stock",
+      "current_player": "odo",
+      "started_hotel": "worldwide"
+    }
+
+#### BuyStock State
+In this state, the current player may buy stocks.
+
+* Acquire Requests
+  - BuyStock
+
+Example:
+
+    The BuyStock state with the current player being Odo.
+
+    {
+      "state": "buy_stock",
+      "current_player": "odo"
+    }
+
+#### DrawTile State
+In this state, the current player draws a tile from the draw pile.
+
+* Acquire Requests
+  - DrawTile
+
+Example:
+
+    The DrawTile state with the current player being Odo.
+
+    {
+      "state": "draw_tile",
+      "current_player": "odo"
+    }
+
+#### ChooseSurvivingHotel State
+In this state, the current player chooses a hotel to survive the merger.
+
+* Acquire Requests
+  - ChooseHotel
+
+Example:
+
+    The ChooseDefunctHotel state with the current player being Odo.
+    Odo may choose either worldwide or tower to survive the merger.
+
+    {
+      "state": "choose_surviving_hotel",
+      "current_player": "odo",
+      "potential_surviving_hotels": [
+        "worldwide",
+        "tower"
+      ]
+    }
+
+#### ChooseDefunctHotel State
+In this state, the current player chooses the next hotel to defunct in the merger.
+
+* Acquire Requests
+  - ChooseHotel
+
+Example:
+
+    The ChooseDefunctHotel state with the current player being Odo.
+    Player Odo may choose either luxor or tower to defunct next.
+    Hotel imperial will survive the merger with no more hotels needing to be merged after luxor and tower.
+
+    {
+      "state": "choose_defunct_hotel",
+      "current_player": "odo",
+      "surviving_hotel": "imperial",
+      "potential_next_defunct_hotels": [
+        "luxor",
+        "tower"
+      ],
+      "remaining_hotels": []
+    }
+
+#### PayBonuses State
+In this state, the majority and minority stockholder is paid according to their bonus amount for the merger of their hotel.
+
+* Acquire Requests
+  - AcceptMoney
+
+Example:
+
+    The PayBonuses state with the current player being Odo.
+    Players Odo and Sal are paid for being the majority and minority stockholders of the defunct hotel $2000 and $1000, respectively.
+    The merger consists of merging tower into american, with no more hotels needing to be merged.
+
+    {
+      "state": "pay_bonuses",
+      "current_player": "odo",
+      "players_to_pay": [
+        {
+          "player": "odo",
+          "amount": 2000
+        },
+        {
+          "player": "sal",
+          "amount": 1000
+        }
+      ],
+      "defunct_hotel": "tower",
+      "surviving_hotel": "american",
+      "remaining_hotels": []
+    }
+
+#### HandleDefunctHotelStocks State
+In this state, each stockholder handles their defunct hotel stocks in sequential order.
+
+* Acquire Requests
+  - HandleStocks
+
+Examples:
+
+    The HandleDefunctHotelStocks state with the current player being Odo.
+    Players Odo, Sal, and Joree all have stocks of the defunct hotel.
+    Player Odo handles his stocks first, followed by Sal, then Joree.
+    The merger consists of merging tower into american, with no more hotels needing to be merged.
+
+    {
+      "state": "handle_defunct_hotel_stocks",
+      "current_player": "odo",
+      "players_with_stock": [
+        "odo",
+        "sal",
+        "joree"
+      ],
+      "defunct_hotel": "tower",
+      "surviving_hotel": "american",
+      "remaining_hotels": []
+    }
+
+    Players Sal handles his stocks, followed by Joree.
+
+    {
+      "state": "handle_defunct_hotel_stocks",
+      "current_player": "odo",
+      "players_with_stock": [
+        "sal",
+        "joree"
+      ],
+      "defunct_hotel": "tower",
+      "surviving_hotel": "american",
+      "remaining_hotels": []
+    }
+
+#### EndGamePayout State
+In this state, each players is paid cash for all their assets which includes stocks and any stockholder bonuses.
+
+* Acquire Requests
+  - AcceptMoney
+
+Examples:
+
+    The EndGamePayout state with no players having received a payout for their assets.
+
+    {
+      "state": "end_game_payout",
+      "players_paid": []
+    }
+
+    The EndGamePayout state with players Odo and Sal having received a payout for their assets.
+
+    {
+      "state": "end_game_payout",
+      "players_paid": [
+        "odo",
+        "sal"
+      ]
+    }
+
+#### GameOver State
+In this state, the game is over with the player results listed in the finishing order.
+
+Example:
+
+    Player Joree won the game, Odo placed second, and Sal placed third.
+
+    {
+      "state": "game_over",
+      "player_results": [
+        "joree",
+        "odo",
+        "sal"
+      ]
+    }
+</xmp>
+<script src="http://strapdownjs.com/v/0.2/strapdown.js"></script>
+<script>
+    // hide the bootstrap create navbar which is created with a <title>
+    $('.navbar').hide();
+  </script>
+</body>
+</html>

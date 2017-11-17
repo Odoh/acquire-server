@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Acquire {{playerId}}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+        <script>$(function(){$("#menu").load("/html/menu.html");});</script>
+        <link rel="stylesheet" type='text/css' href="/css/menu.css">
+
+        <script src="/js/phaser.js"></script>
+        <script src="/js/acq_server.js"></script>
+        <script src="/js/acq_server_cache.js"></script>
+        <script src="/js/acq_phaser.js"></script>
+        <script src="/js/acq_animation.js"></script>
+        <script src="/js/acq_request.js"></script>
+        <script src="/js/main.js"></script>
+    </head>
+    <body>
+        <div id="menu"></div>
+        <h1 align="center">{{playerId}}</h1>
+        <div id="phaser-canvas"></div>
+        <br/>
+        <p>With the game selected, click the left/right arrow keys, or left/right sides of the board, to navigate through history.</p>
+        <script type="text/javascript">
+            var game = new Phaser.Game(1200, 900, Phaser.CANVAS, "phaser-canvas", { init: init, preload: preload, create: create })
+
+            function init() {
+                game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL
+                game.scale.pageAlignHorizontally = true
+                game.scale.pageAlignVertically = true
+                game.scale.setMinMax(100, 100, 3000, Math.max(window.innerHeight, document.documentElement.clientHeight))
+            }
+
+            function preload() {
+                game.load.image("money", "/img/money.png")
+                game.load.image("information_card", "/img/information_card.png")
+                game.load.image("american_stock_1", "/img/american_stock_1.png")
+                game.load.image("continental_stock_1", "/img/continental_stock_1.png")
+                game.load.image("festival_stock_1", "/img/festival_stock_1.png")
+                game.load.image("imperial_stock_1", "/img/imperial_stock_1.png")
+                game.load.image("luxor_stock_1", "/img/luxor_stock_1.png")
+                game.load.image("tower_stock_1", "/img/tower_stock_1.png")
+                game.load.image("worldwide_stock_1", "/img/worldwide_stock_1.png")
+            }
+
+            function create() {
+                main(game, "{{rooturl}}", "{{gameId}}", "{{playerId}}")
+            }
+        </script>
+    </body>
+</html>
