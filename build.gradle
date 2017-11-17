@@ -1,0 +1,73 @@
+buildscript {
+    ext.kotlin_version = "1.1.60"
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+plugins {
+    id "com.jfrog.bintray" version "1.7.3"
+}
+apply plugin: "maven-publish"
+apply plugin: "java-library-distribution"
+apply plugin: "java"
+apply plugin: "kotlin"
+
+repositories {
+    jcenter()
+    mavenCentral()
+    maven {
+        url  "https://dl.bintray.com/odoh/maven"
+    }
+}
+
+dependencies {
+    compile "us.whodag:acquire:1.1"
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "io.javalin:javalin:1.0.0"
+    compile "com.xenomachina:kotlin-argparser:2.0.3"
+    compile group: "com.github.spullara.mustache.java", name: "compiler", version: "0.9.5"
+    compile group: "org.eclipse.jetty.websocket", name: "websocket-server", version: "9.4.7.RC0"
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier "sources"
+}
+
+project.version "1.1"
+
+
+publishing {
+    publications {
+        AcquireServer(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+
+            groupId "us.whodag"
+            artifactId "acquire-server"
+            version "${project.version}"
+        }
+    }
+}
+
+bintray {
+    user = System.getenv("BINTRAY_USER")
+    key = System.getenv("BINTRAY_KEY")
+    publications = ["AcquireServer"]
+    pkg {
+        repo = "maven"
+        name = "AcquireServer"
+        licenses = ["MIT"]
+        vcsUrl = "https://github.com/Odoh/acquire-server"
+        version {
+            name = "Acquire-Server-${project.version}"
+            released = new Date()
+            vcsTag = "${project.version}"
+        }
+    }
+}
