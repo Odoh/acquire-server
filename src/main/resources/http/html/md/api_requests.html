@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Acquire Requests API</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+    <script>$(function(){$("#menu").load("/html/menu.html");});</script>
+    <link rel="stylesheet" type='text/css' href="/css/menu.css">
+</head>
+<body style="padding-top: 0px">
+<div id="menu"></div>
+<xmp theme="readable" style="display:none;">
+### Responses
+A response to an Acquire game request contains whether the request succeeded and a message describing either the resulting action that occured or a description on why the request failed.
+
+Examples:
+
+    A response to a successful PlaceTile request for player Odo.
+
+    {
+      "success": true,
+      "message": "odo placed tile 7-A which starts a merger"
+    }
+
+    A response to a failed DrawTile request for player Odo.
+
+    {
+      "success": false,
+      "message": "DrawTile request not accepted in state GameOver"
+    }
+
+### Requests
+An Acquire game may receive 9 types of requests:
+
+* StartGame
+  - the player starts the game.
+* AcceptMoney
+  - the player accepts a payment of money.
+* AcceptStock
+  - the player accepts a stock.
+* PlaceTile
+  - the player places a tile from their hand.
+* BuyStock
+  - the player may buy stocks
+* ChooseHotel
+  - the player chooses a hotel.
+* DrawTile
+  - the player draws a tile from the draw pile.
+* HandleStocks
+  - the player handles his defunct stocks by either trading, selling, or keeping them.
+* EndGame
+  - the player ends the game.
+
+#### StartGame Request
+This request starts an Acquire game. It is not accepted by any of the Acquire states. Instead, it is a placeholder for the transition from non-existence to the DrawTurnTile state.
+
+Example:
+
+    A start game request by player Odo.
+
+    {
+      "type": "start_game",
+      "player": "odo"
+    }
+
+#### AcceptMoney Request
+This request accepts a payment of money from the bank. It is used when receiving merger bonuses or asset payouts.
+
+* Acquire States
+  - PayBonuses
+  - EndGamePayout
+
+Example:
+
+    An accept money request by player Odo.
+
+    {
+      "type": "accept_money",
+      "player": "odo"
+    }
+
+#### AcceptStock Request
+This request accepts a stock from the bank. It is used when receiving a free stock for founding a hotel.
+
+* Acquire States
+  - FoundersStock
+
+Example:
+
+    An accept stock request by player Odo.
+
+    {
+      "type": "accept_stock",
+      "player": "odo"
+    }
+
+#### PlaceTile Request
+This request places a tile from a player's hand onto the board.
+
+* Acquire States
+  - PlaceTurnTile
+  - PlaceTile
+
+Example:
+
+    A request to place tile 12-B on the board by player Odo.
+
+    {
+      "type": "place_tile",
+      "player": "odo",
+      "tile": "12-B"
+    }
+
+#### BuyStock Request
+This request purchases stock from the bank.
+
+* Acquire States
+  - BuyStock
+
+Examples:
+  
+    A request to buy no stocks by player Odo.
+
+    {
+      "type": "buy_stock",
+      "player": "odo",
+      "stocks": {}
+    }
+
+    A request to buy 2 festival stocks and 1 continental stock by player Odo.
+
+    {
+      "type": "buy_stock",
+      "player": "odo",
+      "stocks": {
+        "festival": 2, 
+        "continental": 1
+      }
+    }
+
+#### ChooseHotel Request
+This request chooses one of the hotels in the game. It is used when starting a hotel and choosing hotels during the merger process.
+
+* Acquire States
+ - StartHotel
+ - ChooseSurvivingHotel
+ - ChooseDefunctHotel
+
+Example:
+
+    A request choosing the worldwide hotel by player Odo.
+
+    {
+      "type": "choose_hotel",
+      "player": "odo",
+      "hotel": "worldwide"
+    }
+
+#### DrawTile Request
+This request draws a tile from the draw pile.
+
+* Acquire States
+  - DrawTurnTile
+  - DrawInitialTiles
+  - DrawTile
+
+Example:
+
+    A request to draw a tile by player Odo.
+
+    {
+      "type": "draw_tile",
+      "player": "odo"
+    }
+
+#### HandleStocks Request
+This request handles the defunct hotel stocks in a merger, specifying the number to trade, sell, and keep.
+
+* Acquire States
+  - HandleDefunctHotelStocks
+
+Example:
+
+    A request to trade 6 stocks, sell 3 stocks, and keep 4 stocks of the defunct hotel by player Odo.
+
+    {
+      "type": "handle_stocks",
+      "player": "odo",
+      "trade": 6,
+      "sell": 3,
+      "keep": 4
+    }
+
+#### EndGame Request
+This request ends the game. The game will only be ended if the right conditions apply.
+
+* Acquire States
+  - PlaceTile
+  - DrawTile
+
+Example:
+
+    A request to end the game by player Odo.
+
+    {
+      "type": "end_game",
+      "player": "odo"
+    }
+</xmp>
+<script src="http://strapdownjs.com/v/0.2/strapdown.js"></script>
+<script>
+    // hide the bootstrap create navbar which is created with a <title>
+    $('.navbar').hide();
+  </script>
+</body>
+</html>
