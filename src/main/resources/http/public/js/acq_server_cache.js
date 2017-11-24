@@ -13,7 +13,7 @@ var AcquireServerCache;
     /** The number of previous turns away from the end of the history cache to query for more history. */
     var HISTORY_CACHE_TRIGGER = 5;
     /** The number of retries to reconnect the WS on error. */
-    var WS_ERROR_RETRIES = 5;
+    var WS_ERROR_RETRIES = 30;
     var T = /** @class */ (function () {
         function T(connInfo, onUpdate) {
             var _this = this;
@@ -136,7 +136,10 @@ var AcquireServerCache;
         var ws = new WebSocket(url);
         ws.onopen = function () { return ws.send(connInfo.gameId); };
         ws.onmessage = function (e) { return onUpdate(JSON.parse(e.data)); };
-        ws.onclose = function () { return console.log("WS closed"); };
+        ws.onclose = function () {
+            console.log("WS closed, attempt to reconnect");
+            runAcquireWebSocket(connInfo, onUpdate, retry + 1);
+        };
         ws.onerror = function () {
             console.log("WS error, attempt to reconnect");
             runAcquireWebSocket(connInfo, onUpdate, retry + 1);

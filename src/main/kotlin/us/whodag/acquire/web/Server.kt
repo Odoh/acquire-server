@@ -184,7 +184,6 @@ fun main(args: Array<String>) {
         }
         post("/game/create") { ctx ->
             try {
-                // TODO: ERROR CHECK
                 val playersParam = ctx.formParam("players")
                 val aiParam = ctx.formParam("ai")
                 val playerIds = if (playersParam == null || playersParam.isEmpty()) emptyList()
@@ -223,7 +222,4 @@ fun main(args: Array<String>) {
     val executor = Executors.newCachedThreadPool()!!
     executor.submit({ runWSPing(acquireWSSessions) })
     executor.submit({ runAIHandler(acquireJsonCache, acquireWSSessions, acquireServerInfo, acquireAis) })
-
-//    acquireJsonCache.find(AcquireId("test_game"))
-//    acquireJsonCache.find(AcquireId("six"))
 }

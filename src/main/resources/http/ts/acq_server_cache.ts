@@ -17,7 +17,7 @@ namespace AcquireServerCache {
     const HISTORY_CACHE_TRIGGER = 5
 
     /** The number of retries to reconnect the WS on error. */
-    const WS_ERROR_RETRIES = 5
+    const WS_ERROR_RETRIES = 30
 
     export class T {
         /** Connection information about the Acquire server. */
@@ -154,7 +154,10 @@ namespace AcquireServerCache {
         let ws = new WebSocket(url)
         ws.onopen = () => ws.send(connInfo.gameId)
         ws.onmessage = e => onUpdate(JSON.parse(e.data))
-        ws.onclose = () => console.log("WS closed")
+        ws.onclose = () => {
+            console.log("WS closed, attempt to reconnect")
+            runAcquireWebSocket(connInfo, onUpdate, retry + 1)
+        }
         ws.onerror = () => {
             console.log("WS error, attempt to reconnect")
             runAcquireWebSocket(connInfo, onUpdate, retry + 1)
