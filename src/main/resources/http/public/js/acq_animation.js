@@ -13,6 +13,17 @@ var AcquireAnimation;
      */
     function animateRequest(phaser, server, prevServer, onComplete) {
         if (onComplete === void 0) { onComplete = function () { }; }
+        AcquirePhaser.Render.forceEnabled();
+        var completeCallback = function () {
+            AcquirePhaser.Render.allowDisabling();
+            onComplete();
+        };
+        animateRequestRendering(phaser, server, prevServer, completeCallback);
+    }
+    AcquireAnimation.animateRequest = animateRequest;
+    /** Core logic of animateRequest, requires rendering enabled. */
+    function animateRequestRendering(phaser, server, prevServer, onComplete) {
+        if (onComplete === void 0) { onComplete = function () { }; }
         // kill any currently active animations
         if (Global.areActiveTweens()) {
             Global.stopAll();
@@ -75,7 +86,6 @@ var AcquireAnimation;
                 return;
         }
     }
-    AcquireAnimation.animateRequest = animateRequest;
     /** Global animation constants and state. */
     var Global;
     (function (Global) {

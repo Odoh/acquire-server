@@ -8,6 +8,39 @@ type ConnectionInfo = {
     selfId: string,
 }
 
+/** Draw the Acquire game.
+ *
+ * @param phaser an instance of AcquirePhaser.
+ * @param server the state of the AcquireServer to draw.
+ */
+function drawAcquire(phaser: AcquirePhaser.T, server: AcquireServer.T) {
+    AcquirePhaser.Render.enable(phaser.game)
+    AcquirePhaser.draw(phaser, server)
+}
+
+/** Draw the Acquire game and activate user inputs if its our turn.
+ *
+ * @param phaser an instance of AcquirePhaser.
+ * @param server the state of the AcquireServer to draw.
+ * @param selfId the ID of ourselves.
+ * @param connInfo this client's connection information.
+ * @param cleanRequestFn function to call which cleans
+ *  the previous request's objects.
+ * @returns a function to clear the current request's objects.
+*/
+function drawAndActivateAcquire(phaser: AcquirePhaser.T,
+                                server: AcquireServer.T,
+                                selfId: string,
+                                connInfo: ConnectionInfo,
+                                cleanRequestFn: () => void): () => void {
+    drawAcquire(phaser, server)
+    if (selfId.length !== 0) {
+        cleanRequestFn()
+        return AcquireRequest.activateRequest(connInfo, phaser, server)
+    }
+    return () => {}
+}
+
 /**
  * Main entry point.
  * 
@@ -34,54 +67,65 @@ function main(game: Phaser.Game, rootUrl: string, gameId: string, selfId: string
          */
         let local = AcquireServerCache.currentTurn(cache)
         let prevLocal = AcquireServerCache.turn(cache, local.turn - 1)
-        AcquirePhaser.draw(phaser, prevLocal)
         AcquireServerCache.setActiveTurn(cache, prevLocal.turn)
+
+        drawAcquire(phaser, prevLocal)
         AcquireAnimation.animateRequest(phaser, local, prevLocal, () => {
-            // upon animation completion, draw the current state and activete player requests, if applicable
-            AcquirePhaser.draw(phaser, local)
-            if (selfId.length !== 0) {
-                cleanRequestFn()
-                cleanRequestFn = AcquireRequest.activateRequest(connInfo, phaser, local)
-            }
+            cleanRequestFn = drawAndActivateAcquire(phaser, local, selfId, connInfo, cleanRequestFn)
         })
     })
 
-    /* Construct the phaser GUI using the current state of the game.
-     * Draw the current state.
-     * Active player requests, if applicable
-     */
+    /* Construct the phaser GUI using the current state of the game. */
     let server = AcquireServerCache.currentTurn(cache)
     let phaser = new AcquirePhaser.T(server, game, selfId)
-    AcquirePhaser.draw(phaser, server)
-    let cleanRequestFn: () => void = () => {}
-    if (selfId.length !== 0) {
-        cleanRequestFn = AcquireRequest.activateRequest(connInfo, phaser, server)
-    }
+    let cleanRequestFn = drawAndActivateAcquire(phaser, server, selfId, connInfo, () => {})
+
+    /* Set an interval to disable rendering in the game loop. Since a large portion of the game is
+     * watching the board and waiting for someone else to play, it wastes A LOT of CPU cycles re-rendering
+     * the screen many times a second.
+     *
+     * Logic is in place to manual re-enable rendering when:
+     * - A popup button becomes highlighted
+     * - An animation is in progress
+     * - It is our turn
+     */
+    setInterval(() => AcquirePhaser.Render.disable(game), 5000)
 
     /* Setup callbacks to navigate through the game history. */
-
     let drawNextTurn = (inc: number) => {
-        let local = AcquireServerCache.nextTurn(cache, inc)
         // if already at the current turn, do nothing
+        let local = AcquireServerCache.nextTurn(cache, inc)
         if (local === undefined) return
 
-        let prevLocal = AcquireServerCache.turn(cache, local.turn - 1)
-        AcquireAnimation.animateRequest(phaser, local, prevLocal, () => {
-            // upon animation completion, draw the current state
-            // if now looking at the current turn on the server, activate player requests, if applicable
-            AcquirePhaser.draw(phaser, local)
-            if (cache.activeTurn === cache.currentTurn && selfId.length !== 0) {
-                cleanRequestFn()
-                cleanRequestFn = AcquireRequest.activateRequest(connInfo, phaser, local)
+        // if incremented up to the current turn, activate requests in addition to drawing Acquire
+        let draw = () => {
+            if (cache.activeTurn === cache.currentTurn) {
+                cleanRequestFn = drawAndActivateAcquire(phaser, local, selfId, connInfo, cleanRequestFn)
+            } else {
+                drawAcquire(phaser, local)
             }
-        })
+        }
+
+        if (inc == 1) {
+            // animate the request
+            let prevLocal = AcquireServerCache.turn(cache, local.turn - 1)
+            AcquireAnimation.animateRequest(phaser, local, prevLocal, () => {
+                draw()
+            })
+        } else {
+            // incremented by more than one request, don't animate
+            draw()
+        }
     }
 
     let drawPrevTurn = (dec: number) => {
-        let local = AcquireServerCache.prevTurn(cache, dec)
         // if already at the starting turn, do nothing
+        let local = AcquireServerCache.prevTurn(cache, dec)
         if (local === undefined) return
-        AcquirePhaser.draw(phaser, local)
+
+        cleanRequestFn()
+        cleanRequestFn = () => {}
+        drawAcquire(phaser, local)
     }
 
     /* Create buttons on each side of the board to traverse the history. */

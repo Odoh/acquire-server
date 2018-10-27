@@ -299,6 +299,35 @@ var AcquirePhaser;
         }
         Arr.contains = contains;
     })(Arr = AcquirePhaser.Arr || (AcquirePhaser.Arr = {}));
+    /** Utility functions for phaser game rendering. */
+    var Render;
+    (function (Render) {
+        /** Flag which will force rendering to always be enabled. */
+        var forceEnableRendering = false;
+        /** Force rendering to always be enabled. */
+        function forceEnabled() {
+            forceEnableRendering = true;
+        }
+        Render.forceEnabled = forceEnabled;
+        /** Allow rendering to be disabled. */
+        function allowDisabling() {
+            forceEnableRendering = false;
+        }
+        Render.allowDisabling = allowDisabling;
+        /** Enable rendering. */
+        function enable(game) {
+            game.lockRender = false;
+        }
+        Render.enable = enable;
+        /** Disable rendering. */
+        function disable(game) {
+            if (forceEnableRendering) {
+                return;
+            }
+            game.lockRender = true;
+        }
+        Render.disable = disable;
+    })(Render = AcquirePhaser.Render || (AcquirePhaser.Render = {}));
     /*
      * Phaser GUI Generalized Constructs
      * ---------------------------------
@@ -430,6 +459,8 @@ var AcquirePhaser;
                 Border.toggle(t.border, game, Border.Type.Select);
                 // enable input
                 t.sprite.inputEnabled = true;
+                t.sprite.events.onInputOver.add(function () { return AcquirePhaser.Render.enable(game); });
+                t.sprite.events.onInputOut.add(function () { return AcquirePhaser.Render.enable(game); });
                 t.sprite.events.onInputDown.add(function () { return toggle(t, game, server, State.Closed, height, width, x, y); });
             }
             else if (t.state === State.Open && state === State.Closed) {
@@ -624,6 +655,8 @@ var AcquirePhaser;
                     this.popup = new Popup.T(createPopupDrawFn(id));
                     this.border = new Border.T(this.nameSprite);
                     this.nameSprite.inputEnabled = true;
+                    this.nameSprite.events.onInputOver.add(function () { return AcquirePhaser.Render.enable(game); });
+                    this.nameSprite.events.onInputOut.add(function () { return AcquirePhaser.Render.enable(game); });
                     this.nameSprite.events.onInputOver.add(function () { return Border.toggle(_this.border, game, Border.Type.Select); });
                     this.nameSprite.events.onInputOut.add(function () { return Border.toggle(_this.border, game, Border.Type.None); });
                 }
@@ -861,6 +894,8 @@ var AcquirePhaser;
                     this.popup = new Popup.T(createPopupDrawFn(game));
                     this.border = new Border.T(this.sprite);
                     this.sprite.inputEnabled = true;
+                    this.sprite.events.onInputOver.add(function () { return AcquirePhaser.Render.enable(game); });
+                    this.sprite.events.onInputOut.add(function () { return AcquirePhaser.Render.enable(game); });
                     this.sprite.events.onInputOver.add(function () { return Border.toggle(_this.border, game, Border.Type.Select); });
                     this.sprite.events.onInputOut.add(function () { return Border.toggle(_this.border, game, Border.Type.None); });
                 }
@@ -1141,6 +1176,8 @@ var AcquirePhaser;
                     this.border = new Border.T(this.sprite);
                     Border.toggle(this.border, game, Border.Type.Outline);
                     this.sprite.inputEnabled = true;
+                    this.sprite.events.onInputOver.add(function () { return AcquirePhaser.Render.enable(game); });
+                    this.sprite.events.onInputOut.add(function () { return AcquirePhaser.Render.enable(game); });
                     this.sprite.events.onInputOver.add(function () { return Border.toggleMany(_this.border, game, [Border.Type.Outline, Border.Type.Select]); });
                     this.sprite.events.onInputOut.add(function () { return Border.toggle(_this.border, game, Border.Type.Outline); });
                 }

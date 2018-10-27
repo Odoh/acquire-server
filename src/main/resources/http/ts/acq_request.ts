@@ -6,9 +6,11 @@
 namespace AcquireRequest {
 
     /**
-     * Activate the GUI elements for submitting requests relevant to the current state of hte game.
+     * Activate the GUI elements for submitting requests relevant to the current state of the game.
      * Returns a callback which will delete all the activated GUI elements.
      * 
+     * If detected that we have a request to perform, rendering is force enabled.
+     *
      * @param connInfo connection information to the server.
      * @param phaser the acquire phaser.
      * @param server the state of the game to activate requests for.
@@ -18,15 +20,26 @@ namespace AcquireRequest {
         switch (sm.state) {
             case AcquireServer.SmStateType.DrawTurnTile: 
                 if (AcquirePhaser.Arr.contains(sm.players_drawn, connInfo.selfId)) return () => {} 
+                AcquirePhaser.Render.forceEnabled()
+
                 return drawTile(connInfo, phaser)
+
             case AcquireServer.SmStateType.PlaceTurnTile:
                 if (AcquirePhaser.Arr.contains(sm.players_placed, connInfo.selfId)) return () => {} 
+                AcquirePhaser.Render.forceEnabled()
+
                 return placeTile(connInfo, phaser)
+
             case AcquireServer.SmStateType.DrawInitialTiles:
                 if (AcquirePhaser.Arr.contains(sm.players_drawn, connInfo.selfId)) return () => {} 
+                AcquirePhaser.Render.forceEnabled()
+
                 return drawTile(connInfo, phaser)
+
             case AcquireServer.SmStateType.PlaceTile:
                 if (sm.current_player !== connInfo.selfId) return () => {}
+                AcquirePhaser.Render.forceEnabled()
+
                 let ptFn = placeTile(connInfo, phaser)
                 let egFn = undefined
                 if (canEndGame(server)) egFn = endGame(connInfo, phaser, server)
@@ -37,20 +50,32 @@ namespace AcquireRequest {
                         egFn()
                     }
                 }
+
             case AcquireServer.SmStateType.StartHotel:
                 if (sm.current_player !== connInfo.selfId) return () => {}
+                AcquirePhaser.Render.forceEnabled()
+
                 let availableHotelIds = AcquireServer.hotels(server)
                                                      .filter(h => h.state.type === AcquireServer.HotelStateType.Available)
                                                      .map(h => h.id)
                 return chooseHotel(connInfo, phaser, availableHotelIds)
+
             case AcquireServer.SmStateType.FoundersStock:
                 if (sm.current_player !== connInfo.selfId) return () => {}
+                AcquirePhaser.Render.forceEnabled()
+
                 return acceptStock(connInfo, phaser, sm.started_hotel)
+
             case AcquireServer.SmStateType.BuyStock:
                 if (sm.current_player !== connInfo.selfId) return () => {}
+                AcquirePhaser.Render.forceEnabled()
+
                 return buyStock(connInfo, phaser, server)
+
             case AcquireServer.SmStateType.DrawTile:
                 if (sm.current_player !== connInfo.selfId) return () => {}
+                AcquirePhaser.Render.forceEnabled()
+
                 let dtFn = drawTile(connInfo, phaser)
                 let eggFn = undefined
                 if (canEndGame(server)) eggFn = endGame(connInfo, phaser, server)
@@ -61,23 +86,40 @@ namespace AcquireRequest {
                         eggFn()
                     }
                 }
+
             case AcquireServer.SmStateType.EndGamePayout:
                 if (AcquirePhaser.Arr.contains(sm.players_paid, connInfo.selfId)) return () => {} 
+                AcquirePhaser.Render.forceEnabled()
+
                 return acceptMoney(connInfo, phaser)
+
             case AcquireServer.SmStateType.GameOver:
                 return () => {}
+
             case AcquireServer.SmStateType.ChooseSurvivingHotel:
                 if (sm.current_player !== connInfo.selfId) return () => {}
+                AcquirePhaser.Render.forceEnabled()
+
                 return chooseHotel(connInfo, phaser, sm.potential_surviving_hotels)
+
             case AcquireServer.SmStateType.ChooseDefunctHotel:
                 if (sm.current_player !== connInfo.selfId) return () => {}
+                AcquirePhaser.Render.forceEnabled()
+
                 return chooseHotel(connInfo, phaser, sm.potential_next_defunct_hotels)
+
             case AcquireServer.SmStateType.PayBonuses:
                 if (!AcquirePhaser.Arr.contains(sm.players_to_pay.map(p => p.player), connInfo.selfId)) return () => {} 
+                AcquirePhaser.Render.forceEnabled()
+
                 return acceptMoney(connInfo, phaser)
+
             case AcquireServer.SmStateType.HandleDefunctHotelStocks:
                 if (sm.players_with_stock[0] !== connInfo.selfId) return () => {}
+                AcquirePhaser.Render.forceEnabled()
+
                 return handleStocks(connInfo, phaser, server, sm.surviving_hotel, sm.defunct_hotel)
+
             default: throw new TypeError("Unhandled SM state type")
         }
     }
