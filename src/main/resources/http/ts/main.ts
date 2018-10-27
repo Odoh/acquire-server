@@ -89,7 +89,7 @@ function main(game: Phaser.Game, rootUrl: string, gameId: string, selfId: string
      * - An animation is in progress
      * - It is our turn
      */
-    setInterval(() => AcquirePhaser.Render.disable(game), 5000)
+    setInterval(() => AcquirePhaser.Render.disable(game), 1000)
 
     /* Setup callbacks to navigate through the game history. */
     let drawNextTurn = (inc: number) => {

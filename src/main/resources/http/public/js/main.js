@@ -68,7 +68,7 @@ function main(game, rootUrl, gameId, selfId) {
      * - An animation is in progress
      * - It is our turn
      */
-    setInterval(function () { return AcquirePhaser.Render.disable(game); }, 5000);
+    setInterval(function () { return AcquirePhaser.Render.disable(game); }, 1000);
     /* Setup callbacks to navigate through the game history. */
     var drawNextTurn = function (inc) {
         // if already at the current turn, do nothing
