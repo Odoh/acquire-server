@@ -1,3 +1,30 @@
+/** Draw the Acquire game.
+ *
+ * @param phaser an instance of AcquirePhaser.
+ * @param server the state of the AcquireServer to draw.
+ */
+function drawAcquire(phaser, server) {
+    AcquirePhaser.Render.enable(phaser.game);
+    AcquirePhaser.draw(phaser, server);
+}
+/** Draw the Acquire game and activate user inputs if its our turn.
+ *
+ * @param phaser an instance of AcquirePhaser.
+ * @param server the state of the AcquireServer to draw.
+ * @param selfId the ID of ourselves.
+ * @param connInfo this client's connection information.
+ * @param cleanRequestFn function to call which cleans
+ *  the previous request's objects.
+ * @returns a function to clear the current request's objects.
+*/
+function drawAndActivateAcquire(phaser, server, selfId, connInfo, cleanRequestFn) {
+    drawAcquire(phaser, server);
+    if (selfId.length !== 0) {
+        cleanRequestFn();
+        return AcquireRequest.activateRequest(connInfo, phaser, server);
+    }
+    return function () { };
+}
 /**
  * Main entry point.
  *
@@ -22,51 +49,61 @@ function main(game, rootUrl, gameId, selfId) {
          */
         var local = AcquireServerCache.currentTurn(cache);
         var prevLocal = AcquireServerCache.turn(cache, local.turn - 1);
-        AcquirePhaser.draw(phaser, prevLocal);
         AcquireServerCache.setActiveTurn(cache, prevLocal.turn);
+        drawAcquire(phaser, prevLocal);
         AcquireAnimation.animateRequest(phaser, local, prevLocal, function () {
-            // upon animation completion, draw the current state and activete player requests, if applicable
-            AcquirePhaser.draw(phaser, local);
-            if (selfId.length !== 0) {
-                cleanRequestFn();
-                cleanRequestFn = AcquireRequest.activateRequest(connInfo, phaser, local);
-            }
+            cleanRequestFn = drawAndActivateAcquire(phaser, local, selfId, connInfo, cleanRequestFn);
         });
     });
-    /* Construct the phaser GUI using the current state of the game.
-     * Draw the current state.
-     * Active player requests, if applicable
-     */
+    /* Construct the phaser GUI using the current state of the game. */
     var server = AcquireServerCache.currentTurn(cache);
     var phaser = new AcquirePhaser.T(server, game, selfId);
-    AcquirePhaser.draw(phaser, server);
-    var cleanRequestFn = function () { };
-    if (selfId.length !== 0) {
-        cleanRequestFn = AcquireRequest.activateRequest(connInfo, phaser, server);
-    }
+    var cleanRequestFn = drawAndActivateAcquire(phaser, server, selfId, connInfo, function () { });
+    /* Set an interval to disable rendering in the game loop. Since a large portion of the game is
+     * watching the board and waiting for someone else to play, it wastes A LOT of CPU cycles re-rendering
+     * the screen many times a second.
+     *
+     * Logic is in place to manual re-enable rendering when:
+     * - A popup button becomes highlighted
+     * - An animation is in progress
+     * - It is our turn
+     */
+    setInterval(function () { return AcquirePhaser.Render.disable(game); }, 1000);
     /* Setup callbacks to navigate through the game history. */
     var drawNextTurn = function (inc) {
-        var local = AcquireServerCache.nextTurn(cache, inc);
         // if already at the current turn, do nothing
+        var local = AcquireServerCache.nextTurn(cache, inc);
         if (local === undefined)
             return;
-        var prevLocal = AcquireServerCache.turn(cache, local.turn - 1);
-        AcquireAnimation.animateRequest(phaser, local, prevLocal, function () {
-            // upon animation completion, draw the current state
-            // if now looking at the current turn on the server, activate player requests, if applicable
-            AcquirePhaser.draw(phaser, local);
-            if (cache.activeTurn === cache.currentTurn && selfId.length !== 0) {
-                cleanRequestFn();
-                cleanRequestFn = AcquireRequest.activateRequest(connInfo, phaser, local);
+        // if incremented up to the current turn, activate requests in addition to drawing Acquire
+        var draw = function () {
+            if (cache.activeTurn === cache.currentTurn) {
+                cleanRequestFn = drawAndActivateAcquire(phaser, local, selfId, connInfo, cleanRequestFn);
             }
-        });
+            else {
+                drawAcquire(phaser, local);
+            }
+        };
+        if (inc == 1) {
+            // animate the request
+            var prevLocal = AcquireServerCache.turn(cache, local.turn - 1);
+            AcquireAnimation.animateRequest(phaser, local, prevLocal, function () {
+                draw();
+            });
+        }
+        else {
+            // incremented by more than one request, don't animate
+            draw();
+        }
     };
     var drawPrevTurn = function (dec) {
-        var local = AcquireServerCache.prevTurn(cache, dec);
         // if already at the starting turn, do nothing
+        var local = AcquireServerCache.prevTurn(cache, dec);
         if (local === undefined)
             return;
-        AcquirePhaser.draw(phaser, local);
+        cleanRequestFn();
+        cleanRequestFn = function () { };
+        drawAcquire(phaser, local);
     };
     /* Create buttons on each side of the board to traverse the history. */
     var leftBoardSprite = game.add.sprite(AcquirePhaser.Offset.Board.x(game), AcquirePhaser.Offset.Board.y(game) + AcquirePhaser.Size.Tile.height(game));

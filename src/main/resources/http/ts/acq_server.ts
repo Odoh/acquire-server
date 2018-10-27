@@ -150,7 +150,7 @@ namespace AcquireServer {
                           readonly is_safe: boolean,
                           readonly is_end_game_size: boolean }
 
-    export type Stocks = { readonly [h in HotelId]: number }
+    export type Stocks = { [h in HotelId]: number }
 
     /* Acquire StateMachine */
     export enum SmStateType {

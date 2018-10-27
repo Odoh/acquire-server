@@ -272,6 +272,36 @@ namespace AcquirePhaser {
         }
     }
 
+    /** Utility functions for phaser game rendering. */
+    export namespace Render {
+
+        /** Flag which will force rendering to always be enabled. */
+        let forceEnableRendering = false
+
+        /** Force rendering to always be enabled. */
+        export function forceEnabled() {
+            forceEnableRendering = true
+        }
+
+        /** Allow rendering to be disabled. */
+        export function allowDisabling() {
+            forceEnableRendering = false
+        }
+
+        /** Enable rendering. */
+        export function enable(game: Phaser.Game) {
+            game.lockRender = false
+        }
+
+        /** Disable rendering. */
+        export function disable(game: Phaser.Game) {
+            if (forceEnableRendering) {
+                return
+            }
+            game.lockRender = true
+        }
+    }
+
     /*
      * Phaser GUI Generalized Constructs
      * ---------------------------------
@@ -424,6 +454,8 @@ namespace AcquirePhaser {
 
                 // enable input
                 t.sprite.inputEnabled = true
+                t.sprite.events.onInputOver.add(() => AcquirePhaser.Render.enable(game))
+                t.sprite.events.onInputOut.add(() => AcquirePhaser.Render.enable(game))
                 t.sprite.events.onInputDown.add(() => toggle(t, game, server, State.Closed,
                                                              height, width, x, y))
             } else if (t.state === State.Open && state === State.Closed) {
@@ -682,6 +714,8 @@ namespace AcquirePhaser {
                     this.border = new Border.T(this.nameSprite)
 
                     this.nameSprite.inputEnabled = true
+                    this.nameSprite.events.onInputOver.add(() => AcquirePhaser.Render.enable(game))
+                    this.nameSprite.events.onInputOut.add(() => AcquirePhaser.Render.enable(game))
                     this.nameSprite.events.onInputOver.add(() => Border.toggle(this.border, game, Border.Type.Select))
                     this.nameSprite.events.onInputOut.add(() => Border.toggle(this.border, game, Border.Type.None))
                 }
@@ -920,6 +954,8 @@ namespace AcquirePhaser {
                     this.border = new Border.T(this.sprite)
 
                     this.sprite.inputEnabled = true
+                    this.sprite.events.onInputOver.add(() => AcquirePhaser.Render.enable(game))
+                    this.sprite.events.onInputOut.add(() => AcquirePhaser.Render.enable(game))
                     this.sprite.events.onInputOver.add(() => Border.toggle(this.border, game, Border.Type.Select))
                     this.sprite.events.onInputOut.add(() => Border.toggle(this.border, game, Border.Type.None))
                 }
@@ -1208,6 +1244,8 @@ namespace AcquirePhaser {
                     Border.toggle(this.border, game, Border.Type.Outline)
 
                     this.sprite.inputEnabled = true
+                    this.sprite.events.onInputOver.add(() => AcquirePhaser.Render.enable(game))
+                    this.sprite.events.onInputOut.add(() => AcquirePhaser.Render.enable(game))
                     this.sprite.events.onInputOver.add(() => Border.toggleMany(this.border, game, [Border.Type.Outline, Border.Type.Select]))
                     this.sprite.events.onInputOut.add(() => Border.toggle(this.border, game, Border.Type.Outline))
                 }

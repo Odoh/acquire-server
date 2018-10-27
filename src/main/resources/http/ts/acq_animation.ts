@@ -16,6 +16,20 @@ namespace AcquireAnimation {
                                    server: AcquireServer.T,
                                    prevServer: AcquireServer.T,
                                    onComplete: () => void = () => {}) {
+        AcquirePhaser.Render.forceEnabled()
+
+        let completeCallback = () => {
+            AcquirePhaser.Render.allowDisabling()
+            onComplete()
+        }
+        animateRequestRendering(phaser, server, prevServer, completeCallback)
+    }
+
+    /** Core logic of animateRequest, requires rendering enabled. */
+    function animateRequestRendering(phaser: AcquirePhaser.T,
+                                     server: AcquireServer.T,
+                                     prevServer: AcquireServer.T,
+                                     onComplete: () => void = () => {}) {
         // kill any currently active animations
         if (Global.areActiveTweens()) {
             Global.stopAll()

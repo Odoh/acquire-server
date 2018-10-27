@@ -5,8 +5,10 @@
 var AcquireRequest;
 (function (AcquireRequest_1) {
     /**
-     * Activate the GUI elements for submitting requests relevant to the current state of hte game.
+     * Activate the GUI elements for submitting requests relevant to the current state of the game.
      * Returns a callback which will delete all the activated GUI elements.
+     *
+     * If detected that we have a request to perform, rendering is force enabled.
      *
      * @param connInfo connection information to the server.
      * @param phaser the acquire phaser.
@@ -18,18 +20,22 @@ var AcquireRequest;
             case AcquireServer.SmStateType.DrawTurnTile:
                 if (AcquirePhaser.Arr.contains(sm.players_drawn, connInfo.selfId))
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 return drawTile(connInfo, phaser);
             case AcquireServer.SmStateType.PlaceTurnTile:
                 if (AcquirePhaser.Arr.contains(sm.players_placed, connInfo.selfId))
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 return placeTile(connInfo, phaser);
             case AcquireServer.SmStateType.DrawInitialTiles:
                 if (AcquirePhaser.Arr.contains(sm.players_drawn, connInfo.selfId))
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 return drawTile(connInfo, phaser);
             case AcquireServer.SmStateType.PlaceTile:
                 if (sm.current_player !== connInfo.selfId)
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 var ptFn_1 = placeTile(connInfo, phaser);
                 var egFn_1 = undefined;
                 if (canEndGame(server))
@@ -44,6 +50,7 @@ var AcquireRequest;
             case AcquireServer.SmStateType.StartHotel:
                 if (sm.current_player !== connInfo.selfId)
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 var availableHotelIds = AcquireServer.hotels(server)
                     .filter(function (h) { return h.state.type === AcquireServer.HotelStateType.Available; })
                     .map(function (h) { return h.id; });
@@ -51,14 +58,17 @@ var AcquireRequest;
             case AcquireServer.SmStateType.FoundersStock:
                 if (sm.current_player !== connInfo.selfId)
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 return acceptStock(connInfo, phaser, sm.started_hotel);
             case AcquireServer.SmStateType.BuyStock:
                 if (sm.current_player !== connInfo.selfId)
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 return buyStock(connInfo, phaser, server);
             case AcquireServer.SmStateType.DrawTile:
                 if (sm.current_player !== connInfo.selfId)
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 var dtFn_1 = drawTile(connInfo, phaser);
                 var eggFn_1 = undefined;
                 if (canEndGame(server))
@@ -73,24 +83,29 @@ var AcquireRequest;
             case AcquireServer.SmStateType.EndGamePayout:
                 if (AcquirePhaser.Arr.contains(sm.players_paid, connInfo.selfId))
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 return acceptMoney(connInfo, phaser);
             case AcquireServer.SmStateType.GameOver:
                 return function () { };
             case AcquireServer.SmStateType.ChooseSurvivingHotel:
                 if (sm.current_player !== connInfo.selfId)
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 return chooseHotel(connInfo, phaser, sm.potential_surviving_hotels);
             case AcquireServer.SmStateType.ChooseDefunctHotel:
                 if (sm.current_player !== connInfo.selfId)
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 return chooseHotel(connInfo, phaser, sm.potential_next_defunct_hotels);
             case AcquireServer.SmStateType.PayBonuses:
                 if (!AcquirePhaser.Arr.contains(sm.players_to_pay.map(function (p) { return p.player; }), connInfo.selfId))
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 return acceptMoney(connInfo, phaser);
             case AcquireServer.SmStateType.HandleDefunctHotelStocks:
                 if (sm.players_with_stock[0] !== connInfo.selfId)
                     return function () { };
+                AcquirePhaser.Render.forceEnabled();
                 return handleStocks(connInfo, phaser, server, sm.surviving_hotel, sm.defunct_hotel);
             default: throw new TypeError("Unhandled SM state type");
         }
