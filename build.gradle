@@ -13,9 +13,19 @@ plugins {
     id "com.jfrog.bintray" version "1.7.3"
 }
 apply plugin: "maven-publish"
-apply plugin: "java-library-distribution"
+apply plugin: "application"
 apply plugin: "java"
 apply plugin: "kotlin"
+
+mainClassName = "us.whodag.acquire.web.ServerKt"
+
+run {
+    if (project.hasProperty("rooturl") && project.hasProperty("port")) {
+        args "--rooturl=" + project.getProperty("rooturl"), "--port=" + project.getProperty("port")
+    }
+
+    jvmArgs = ["-Xms256m", "-Xmx300m"]
+}
 
 repositories {
     jcenter()
