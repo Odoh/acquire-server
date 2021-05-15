@@ -38,10 +38,11 @@ repositories {
 dependencies {
     compile "us.whodag:acquire:1.1"
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    compile "io.javalin:javalin:1.0.0"
+    compile "io.javalin:javalin:3.13.4"
     compile "com.xenomachina:kotlin-argparser:2.0.3"
     compile group: "com.github.spullara.mustache.java", name: "compiler", version: "0.9.5"
     compile group: "org.eclipse.jetty.websocket", name: "websocket-server", version: "9.4.7.RC0"
+    compile "org.thymeleaf:thymeleaf:3.0.11.RELEASE"
 }
 
 task sourcesJar(type: Jar) {

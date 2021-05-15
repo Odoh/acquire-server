@@ -8,6 +8,12 @@ import us.whodag.acquire.Acquires.jsonCache
 import us.whodag.acquire.acq.AcquireId
 import us.whodag.acquire.acq.JsonCacheAcquire
 import us.whodag.acquire.defaultGamePath
+import java.nio.file.Files
+import java.nio.file.Paths
+import kotlin.collections.Collection
+import kotlin.collections.MutableMap
+import kotlin.collections.mutableMapOf
+import kotlin.collections.set
 
 /**
  * Database of JSON cached Acquire games which are file persisted.
@@ -41,14 +47,30 @@ class AcquireJsonCaches(private val acquires: MutableMap<AcquireId, JsonCacheAcq
             logger.debug { "Found Acquire game with id $acquireId in memory" }
             return inMemory
         }
-        val inFile = Acquires.standardLoadFromPath(defaultGamePath("${acquireId.name}.acq"))
+        val persisted = loadPersistedGame("${acquireId.name}.acq");
+        if (persisted != null) {
+            logger.debug { "Found Acquire game with id $acquireId in file" }
+            return persisted
+        }
+        return null;
+    }
+
+    /** Load an Acquire game into memory from its persisted path name. */
+    private fun loadPersistedGame(persistedName: String): JsonCacheAcquire? {
+        val inFile = Acquires.standardLoadFromPath(defaultGamePath(persistedName))
         if (inFile != null) {
             val loaded = inFile.filePersist().jsonCache()
-            acquires[acquireId] = loaded
-            logger.debug { "Found Acquire game with id $acquireId in file" }
+            acquires[loaded.id()] = loaded
             return loaded
         }
         return null
+    }
+
+    /** Load all Acquire games that have been persisted. */
+    fun loadAllPersistedGames() {
+        Files.walk(Paths.get(defaultGamePath("")))
+            .filter { item -> item.toString().endsWith(".acq") }
+            .forEach { acqFile -> loadPersistedGame(acqFile.fileName.toString()) }
     }
 
     /**

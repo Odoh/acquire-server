@@ -1,10 +1,14 @@
 package us.whodag.acquire.web
 
+import com.eclipsesource.json.JsonArray
+import com.github.mustachejava.DefaultMustacheFactory
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
-import io.javalin.ApiBuilder.get
-import io.javalin.ApiBuilder.post
 import io.javalin.Javalin
+import io.javalin.apibuilder.ApiBuilder.get
+import io.javalin.apibuilder.ApiBuilder.post
+import io.javalin.plugin.rendering.JavalinRenderer
+import io.javalin.plugin.rendering.template.JavalinMustache
 import us.whodag.acquire.*
 import us.whodag.acquire.Acquires.logger
 import us.whodag.acquire.acq.AcquireId
@@ -105,18 +109,25 @@ fun main(args: Array<String>) {
     val PLAYER_NAME_LIMIT = 10
     val PLAYER_CREATE_PATTERN = Pattern.compile("""([a-zA-Z0-9]\s*)+""")
 
-    val acquireJsonCache = AcquireJsonCaches()
     val acquireWSSessions = AcquireWSSessions()
     val acquireServerInfo = AcquireServerInfo()
     val acquireAis = AcquireAIs()
+    val acquireJsonCache = AcquireJsonCaches()
+    acquireJsonCache.loadAllPersistedGames()
 
-    val app = Javalin.create().enableCorsForOrigin("null").port(parser.port)
+    val app = Javalin.create { config ->
+        config.enableCorsForAllOrigins()
+        config.addStaticFiles("/http/public")
+    }
+    JavalinRenderer.register(JavalinMustache, ".mustache")
+
     app.exception(BadRequestException::class.java) { e, ctx -> ctx.status(400).result(e.message) }
     app.exception(NotFoundException::class.java) { e, ctx -> ctx.status(404).result(e.message) }
-    app.enableStaticFiles("/http/public")
     app.ws("/game/ws") { ws ->
-        ws.onConnect { session -> session.idleTimeout = TimeMs.WS_IDLE_TIMEOUT }
-        ws.onMessage { session, message ->
+        ws.onConnect { ctx -> ctx.session.idleTimeout = TimeMs.WS_IDLE_TIMEOUT }
+        ws.onMessage { ctx ->
+            val message = ctx.message();
+            val session = ctx.session;
             // expect the message to contain the acquire id to become a listener for
             val acquire = acquireJsonCache.find(AcquireId(message))
             if (acquire == null) {
@@ -127,42 +138,51 @@ fun main(args: Array<String>) {
                 session.remote.sendString(acquire.stateJson(acquire.turn()))
             }
         }
-        ws.onClose { session, statusCode, reason ->
+        ws.onClose { ctx ->
+            val statusCode = ctx.status();
+            val reason = ctx.reason();
+            val session = ctx.session;
             logger.debug("Session onClose statusCode [$statusCode] reason [$reason]")
             acquireWSSessions.remove(session)
         }
-        ws.onError { session, throwable ->
-            logger.warn("Session onError throwable [$throwable]")
+        ws.onError { ctx ->
+            val error = ctx.error();
+            val session = ctx.session;
+            logger.warn("Session onError [$error]")
             acquireWSSessions.remove(session)
         }
     }
     app.routes {
-        get("/") { ctx -> ctx.renderMustache(templatePath("index.html"), mapOf(Pair("rooturl", parser.rooturl))) }
-        get("/api/http") { ctx -> ctx.renderMustache(templatePath("md/api_http.html"))}
-        get("/api/objects") { ctx -> ctx.renderMustache(templatePath("md/api_objects.html"))}
-        get("/api/requests") { ctx -> ctx.renderMustache(templatePath("md/api_requests.html"))}
-        get("/api/states") { ctx -> ctx.renderMustache(templatePath("md/api_states.html"))}
+        get("/") { ctx -> ctx.render(templatePath("index.mustache"), mapOf(Pair("rooturl", parser.rooturl))) }
+        get("/api/http") { ctx -> ctx.render(templatePath("md/api_http.html"))}
+        get("/api/objects") { ctx -> ctx.render(templatePath("md/api_objects.html"))}
+        get("/api/requests") { ctx -> ctx.render(templatePath("md/api_requests.html"))}
+        get("/api/states") { ctx -> ctx.render(templatePath("md/api_states.html"))}
+        get("/gameoverview") { ctx ->
+            ctx.contentType("application/json").result(acquireJsonCache.all()
+                .overviews(acquireServerInfo, acquireWSSessions).jsonString())
+        }
         get("/game") { ctx ->
-            ctx.renderMustache(templatePath("games.html"), mapOf(Pair("overviews", acquireJsonCache.all().overviews(acquireServerInfo, acquireWSSessions))))
+            ctx.render(templatePath("games.mustache"), mapOf(Pair("overviews", acquireJsonCache.all().overviews(acquireServerInfo, acquireWSSessions))))
         }
         get("/game/:id/gui") { ctx ->
-            val id = AcquireId(ctx.param("id")!!)
+            val id = AcquireId(ctx.pathParam("id"))
             val acquire = acquireJsonCache.find(id) ?: throw NotFoundException("Acquire game with id [$id] not found")
             val player: String = ctx.queryParam("player") ?: ""
             if (!player.isEmpty() && !acquire.players().map { it.name }.contains(player)) throw NotFoundException("Player [$player] not in Acquire game with id [$id]")
             if (acquireAis.hasAi(id) && acquireAis.aiPlayerIds(id).map { it.name }.contains(player)) throw NotFoundException("Player [$player] is an AI in Acquire game with id [$id]")
-            ctx.renderMustache(templatePath("gui.html"), mapOf(Pair("rooturl", parser.rooturl),
+            ctx.render(templatePath("gui.mustache"), mapOf(Pair("rooturl", parser.rooturl),
                                                                Pair("gameId", acquire.id().name),
                                                                Pair("playerId", player)))
         }
         get("/game/:id") { ctx -> // QUERY: turn
-            val id = AcquireId(ctx.param("id")!!)
+            val id = AcquireId(ctx.pathParam("id"))
             val acquire = acquireJsonCache.find(id) ?: throw NotFoundException("Acquire game with id [$id] not found")
             val turn: Int = ctx.queryParam("turn")?.toInt() ?: acquire.turn()
             ctx.contentType("application/json").result(acquire.stateJson(turn))
         }
         get("/game/:id/history") { ctx -> // QUERY: startTurn, endTurn
-            val id = AcquireId(ctx.param("id")!!)
+            val id = AcquireId(ctx.pathParam("id"))
             val acquire = acquireJsonCache.find(id) ?: throw NotFoundException("Acquire game with id [$id] not found")
             val startTurn: Int = ctx.queryParam("startTurn")?.toInt() ?: 0
             val endTurn: Int = ctx.queryParam("endTurn")?.toInt() ?: acquire.turn()
@@ -171,7 +191,7 @@ fun main(args: Array<String>) {
             ctx.contentType("application/json").result(acquire.statesJson(startTurn, endTurn))
         }
         post("/game/:id/request") { ctx ->
-            val id = AcquireId(ctx.param("id")!!)
+            val id = AcquireId(ctx.pathParam("id"))
             val acquire = acquireJsonCache.find(id) ?: throw NotFoundException("Acquire game with id [$id] not found")
             try {
                 val acqReq = parseJson(ctx.body()).toAcqReq()
@@ -216,7 +236,7 @@ fun main(args: Array<String>) {
             }
         }
     }
-    app.start()
+    app.start(parser.port)
 
     // spin up the required server threads
     val executor = Executors.newCachedThreadPool()!!
